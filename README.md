@@ -97,7 +97,8 @@ src/
   world/Tiles.ts            tile ids + surface physics table
   world/ChunkRenderer.ts    draws a 512px chunk: daylight base, wet layer, night-light layer
   world/ChunkManager.ts     chunk streaming: build visible, preload neighbours, unload far; animated props
-  gfx/SpriteFactory.ts      procedural car sprites, glows, light cones, shop-sign textures
+  gfx/CarArt.ts             car sprites: per-class silhouettes, cabins, wheels and parts
+  gfx/SpriteFactory.ts      registers textures: cars, glows, light cones, shop signs
   gfx/PixelFont.ts          3×5 pixel font
   vehicles/VehicleData.ts   6 classes × 2 vehicles (stats + looks), traffic looks
   vehicles/Vehicle.ts       reusable arcade physics body + sprites/lights
@@ -127,6 +128,12 @@ The roster of 12 vehicles is defined. AI rivals already use all of them, but the
 | Day | Sunset | Night |
 | --- | --- | --- |
 | ![Day](docs/screenshots/day.png) | ![Sunset](docs/screenshots/sunset.png) | ![Night](docs/screenshots/night.png) |
+
+### Vehicles
+
+Each class has its own silhouette (body outline, cabin position, wheel stance and parts), drawn in `src/gfx/CarArt.ts`.
+
+![All vehicles](docs/screenshots/cars.png)
 
 ![Mobile landscape with touch controls](docs/screenshots/mobile.png)
 ![Race results with Nova's bonus question](docs/screenshots/results.png)
