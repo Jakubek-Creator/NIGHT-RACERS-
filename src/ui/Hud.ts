@@ -1,5 +1,4 @@
 import { MAP_H, MAP_W, TILE, toKmh } from '../config';
-import { drawNova } from '../edu/Nova';
 import type { CityMap } from '../world/CityMap';
 import { Tile } from '../world/Tiles';
 
@@ -49,7 +48,7 @@ export const fmtTime = (t: number) => {
   return `${m}:${s < 10 ? '0' : ''}${s.toFixed(1)}`;
 };
 
-/** DOM HUD: money/rep chips, mini-map, speedometer, race panel, toasts and Nova messages. */
+/** DOM HUD: money/rep chips, mini-map, speedometer, race panel, toasts and hint messages. */
 export class Hud {
   private mini = $('minimap') as HTMLCanvasElement;
   private mctx: CanvasRenderingContext2D;
@@ -57,7 +56,7 @@ export class Hud {
   private speedo = $('speedo') as HTMLCanvasElement;
   private sctx: CanvasRenderingContext2D;
   private toastTimer = 0;
-  private novaTimer = 0;
+  private hintTimer = 0;
   private last = 0;
 
   constructor(map: CityMap) {
@@ -77,7 +76,6 @@ export class Hud {
         g.fillStyle = MINI_COL[map.get(x, y)] ?? '#000';
         g.fillRect(x, y, 1, 1);
       }
-    drawNova($('novaFace') as HTMLCanvasElement);
   }
 
   toast(text: string, ms = 2200) {
@@ -87,10 +85,10 @@ export class Hud {
     this.toastTimer = ms / 1000;
   }
 
-  nova(text: string, ms = 5000) {
-    $('novaText').textContent = text;
-    $('nova').classList.remove('hidden');
-    this.novaTimer = ms / 1000;
+  hint(text: string, ms = 5000) {
+    $('hint').textContent = text;
+    $('hint').classList.remove('hidden');
+    this.hintTimer = ms / 1000;
   }
 
   countdown(text: string | null) {
@@ -108,7 +106,7 @@ export class Hud {
 
   update(dt: number, f: HudFrame) {
     if (this.toastTimer > 0 && (this.toastTimer -= dt) <= 0) $('toast').classList.add('hidden');
-    if (this.novaTimer > 0 && (this.novaTimer -= dt) <= 0) $('nova').classList.add('hidden');
+    if (this.hintTimer > 0 && (this.hintTimer -= dt) <= 0) $('hint').classList.add('hidden');
     this.last += dt;
     if (this.last < 1 / 20) return; // 20 Hz HUD refresh is plenty
     this.last = 0;

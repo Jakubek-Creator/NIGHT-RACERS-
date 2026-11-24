@@ -43,8 +43,7 @@ body { touch-action: none; user-select: none; -webkit-user-select: none; -webkit
 #countdown.pop { animation: pop 0.6s ease-out; }
 @keyframes pop { from { transform: translate(-50%, -50%) scale(1.8); opacity: 0.2; } to { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
 #toast { position: absolute; top: 24%; left: 50%; transform: translateX(-50%); background: var(--panel); border-left: 4px solid var(--amber); padding: 8px 16px; border-radius: 2px; font-weight: 800; letter-spacing: 0.5px; white-space: nowrap; max-width: 92vw; overflow: hidden; text-overflow: ellipsis; }
-#nova { position: absolute; left: calc(10px + var(--safe-l)); top: calc(126px + var(--safe-t)); max-width: min(360px, 60vw); display: flex; gap: 8px; align-items: flex-start; background: var(--panel); border-left: 4px solid var(--blue); border-radius: 2px; padding: 8px; font-size: 13px; line-height: 1.35; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35); }
-#nova canvas { width: 40px; height: 40px; image-rendering: pixelated; flex: none; background: #2a2d35; border-radius: 3px; }
+#hint { position: absolute; left: calc(10px + var(--safe-l)); top: calc(126px + var(--safe-t)); max-width: min(360px, 60vw); background: var(--panel); border-left: 4px solid var(--blue); border-radius: 2px; padding: 8px 10px; font-size: 13px; line-height: 1.35; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35); }
 #speedo { position: absolute; bottom: calc(6px + var(--safe-b)); left: 50%; transform: translateX(-50%); width: 170px; height: 100px; }
 body.touch #speedo { bottom: calc(4px + var(--safe-b)); }
 
@@ -84,15 +83,6 @@ body.touch #speedo { bottom: calc(4px + var(--safe-b)); }
 .results i { display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 2px; }
 .reward { text-align: center; }
 .reward b { color: var(--amber); }
-.novaq { display: flex; gap: 10px; background: rgba(58, 139, 216, 0.1); border-left: 4px solid var(--blue); border-radius: 2px; padding: 10px; }
-.novaq .face { width: 48px; height: 48px; image-rendering: pixelated; flex: none; background: #2a2d35; border-radius: 3px; }
-.novaq p { margin: 0 0 8px; }
-.novaq .q { font-size: 16px; font-weight: 800; }
-.choices { display: flex; gap: 8px; flex-wrap: wrap; }
-.choices button { min-width: 72px; font-size: 18px; }
-.choices button.right { border-color: #50c86e; background: #1e4a2a; }
-.choices button.wrong { border-color: var(--accent); background: #4a1e1a; }
-.explain { color: #8ec4f4; }
 
 #loading { position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #16181d; gap: 10px; }
 #loading .logo { font-size: 44px; font-weight: 900; font-style: italic; letter-spacing: 2px; border-bottom: 5px solid var(--accent); padding-bottom: 4px; }
@@ -104,11 +94,10 @@ body.touch #speedo { bottom: calc(4px + var(--safe-b)); }
   .chip.money { font-size: 14px; }
   #raceInfo { font-size: 15px; gap: 8px; padding: 4px 8px; top: calc(6px + var(--safe-t)); }
   #countdown { font-size: 68px; }
-  #nova { top: calc(100px + var(--safe-t)); font-size: 11px; }
+  #hint { top: calc(100px + var(--safe-t)); font-size: 11px; }
   #speedo { width: 136px; height: 80px; }
 }
 @media (max-height: 500px) {
-  #nova { top: calc(44px + var(--safe-t)); left: 50%; transform: translateX(-50%); max-width: min(44vw, 380px); padding: 5px 7px; font-size: 11px; }
-  #nova canvas { width: 28px; height: 28px; }
+  #hint { top: calc(44px + var(--safe-t)); left: 50%; transform: translateX(-50%); max-width: min(44vw, 380px); padding: 5px 7px; font-size: 11px; }
   #toast { top: auto; bottom: calc(96px + var(--safe-b)); font-size: 12px; }
 }

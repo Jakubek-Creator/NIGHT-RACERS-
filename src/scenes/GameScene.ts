@@ -2,7 +2,6 @@ import Phaser from 'phaser';
 import { DEPTH, DIRS, GRID, TILE, WORLD_H, WORLD_W, nodePos } from '../config';
 import { clamp, damp } from '../core/math';
 import { TrafficSystem } from '../ai/Traffic';
-import { adapt, makeQuestion } from '../edu/Nova';
 import { registerTextures, SpriteBank, hexStr } from '../gfx/SpriteFactory';
 import { collideBodies, collideKinematic, collideWorld } from '../physics/Collision';
 import { RaceManager } from '../race/RaceManager';
@@ -115,10 +114,10 @@ export class GameScene extends Phaser.Scene {
 
     document.getElementById('loading')!.classList.add('hidden');
     if (!this.save.seenIntro) {
-      this.hud.nova("Hi, I'm Nova! Welcome to Bayview. Cruise around town, then head to the Motor Fair flag to start the DOWNTOWN LOOP race.", 8000);
+      this.hud.hint('Welcome to Bayview! Cruise around town, then head to the Motor Fair flag to start the DOWNTOWN LOOP race.', 8000);
       this.save.seenIntro = true;
       writeSave(this.save);
-    } else this.hud.nova('Welcome back to Bayview! The DOWNTOWN LOOP race is waiting at the Motor Fair.', 4500);
+    } else this.hud.hint('Welcome back to Bayview! The DOWNTOWN LOOP race is waiting at the Motor Fair.', 4500);
   }
 
   private addMarker(x: number, y: number, color: number, label: string) {
@@ -159,7 +158,6 @@ export class GameScene extends Phaser.Scene {
       fps: this.showFps,
       zoom: this.userZoom,
       ctlScale: this.touch.scale,
-      mathsLevel: this.save.maths.level,
       onResume: () => this.togglePause(),
       onTime: (h) => {
         this.dayNight.hour = h;
@@ -325,7 +323,7 @@ export class GameScene extends Phaser.Scene {
     }
     if (ev.lap && !ev.finished) {
       this.hud.toast(`LAP ${ev.lap + 1}/${this.race.def.laps} · ${fmtTime(this.race.lastLapTimes[this.race.lastLapTimes.length - 1])}`);
-      if (ev.lap === this.race.def.laps - 1) this.hud.nova('Final lap! Watch for shortcuts through the parking lots.', 3000);
+      if (ev.lap === this.race.def.laps - 1) this.hud.hint('Final lap! Watch for shortcuts through the parking lots.', 3000);
     }
     if (ev.finished) {
       this.hud.countdown('FINISH');
@@ -351,11 +349,8 @@ export class GameScene extends Phaser.Scene {
       you: e.isPlayer,
       color: hexStr(e.color),
     }));
-    const q = makeQuestion(this.save.maths.level, { reward });
-    showResults(rows, reward, rep, fmtTime(bestLap), q, (bonus) => {
-      if (bonus !== null) adapt(this.save.maths, bonus);
-      const total = Math.round(reward * (bonus ? 1.5 : 1));
-      this.save.money += total;
+    showResults(rows, reward, rep, fmtTime(bestLap), () => {
+      this.save.money += reward;
       this.save.rep.street += rep;
       if (place === 1) this.save.racesWon++;
       const tt = this.race.player!.finishTime;
@@ -365,8 +360,8 @@ export class GameScene extends Phaser.Scene {
       closeOverlay();
       this.race.end();
       this.resultsShown = false;
-      this.hud.toast(`+$${total}${bonus ? ' (NOVA BONUS!)' : ''}`);
-      this.hud.nova(place === 1 ? 'Amazing driving! Race again any time at the Motor Fair flag.' : 'Good run! Try the parking-lot shortcuts next time.', 4500);
+      this.hud.toast(`+$${reward}`);
+      this.hud.hint(place === 1 ? 'Amazing driving! Race again any time at the Motor Fair flag.' : 'Good run! Try the parking-lot shortcuts next time.', 4500);
     });
   }
 
@@ -399,7 +394,7 @@ export class GameScene extends Phaser.Scene {
       this.camX = p.x;
       this.camY = p.y;
       this.lastCountdown = -1;
-      this.hud.nova('Two laps of downtown Bayview. Follow the yellow checkpoints. Beat the rivals!', 3500);
+      this.hud.hint('Two laps of downtown Bayview. Follow the yellow checkpoints. Beat the rivals!', 3500);
     } else if (ctx === 'garage') {
       if (p.damage < 1) this.hud.toast('YOUR CAR IS ALREADY PERFECT');
       else {

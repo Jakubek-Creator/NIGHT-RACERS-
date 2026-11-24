@@ -10,7 +10,6 @@ export interface SaveData {
   version: 1;
   money: number;
   rep: Reputation;
-  maths: { level: number; streak: number; correct: number; answered: number };
   racesWon: number;
   bestRace: number | null;
   bestLap: number | null;
@@ -21,7 +20,6 @@ export const defaultSave = (): SaveData => ({
   version: 1,
   money: 500,
   rep: { street: 0, rally: 0, circuit: 0, offroad: 0, drag: 0 },
-  maths: { level: 1, streak: 0, correct: 0, answered: 0 },
   racesWon: 0,
   bestRace: null,
   bestLap: null,
@@ -51,7 +49,9 @@ export async function loadSave(): Promise<SaveData> {
       req.onerror = () => reject(req.error);
     });
     const def = defaultSave();
-    return data ? { ...def, ...data, rep: { ...def.rep, ...data.rep }, maths: { ...def.maths, ...data.maths } } : def;
+    if (!data) return def;
+    const { maths: _dropped, ...rest } = data as SaveData & { maths?: unknown }; // older saves had maths progress
+    return { ...def, ...rest, rep: { ...def.rep, ...rest.rep } };
   } catch {
     return defaultSave();
   }

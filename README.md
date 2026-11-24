@@ -1,11 +1,12 @@
-# NIGHT RACERS — Bayview Maths Missions
+# NIGHT RACERS — Bayview
 
-Open-world, top-down arcade racing with an educational twist, built for the browser (mobile-first).
+Open-world, top-down arcade racing, built for the browser (mobile-first).
 This is **Milestone 1: the playable Bayview downtown prototype** from the [design spec](docs/SPEC.md).
 
-> **Style change:** the original spec used a neon theme (Neon Bay / Neon City). The game now uses a natural look with a
-> full **day/night cycle**. Place names changed to match: Neon Bay → **Bayview**, Neon City → **Downtown**,
-> NEON LOOP → **DOWNTOWN LOOP**, Neon Bay Festival → **Bayview Motor Fair**. `docs/SPEC.md` is kept as originally written.
+> **Changes from the spec** (`docs/SPEC.md` is kept as originally written):
+> - **No neon theme.** The game uses a natural look with a full **day/night cycle**. Place names changed to match:
+>   Neon Bay → **Bayview**, Neon City → **Downtown**, NEON LOOP → **DOWNTOWN LOOP**, Neon Bay Festival → **Bayview Motor Fair**.
+> - **No Nova or maths.** The educational part (spec section 9) is now a separate project, and this game is racing only.
 
 ## Run it
 
@@ -66,15 +67,13 @@ positions (MOVE CONTROLS), or reset the layout. The layout is remembered per dev
     a chequered start/finish line, lap counting, live positions and a HUD arrow. At the end a results screen shows money
     and street-reputation rewards. Rivals have different personalities (skill, aggression, racing line), corner braking,
     stuck recovery, an off-screen rescue if they get stuck, and mild rubber-banding.
-11. **Nova and maths.** Nova greets you and gives tips without blocking play. After each race she offers an optional
-    bonus question (+50% prize). Its difficulty adapts across 8 levels, from addition up to speed × time, and the
-    questions use racing themes. Free roaming is never interrupted.
+11. **Hints.** Short tips (where the race starts, final lap, shortcuts) appear in a corner without blocking play.
 12. **Garage.** Drive to the GARAGE ring to repair damage (costs money).
 13. **Dynamic weather.** The weather moves between clear, drizzle, rain and storm, with rain streaks and thunder flashes.
     Rain dims the daylight, and roads get wet (darker, with puddles) and dry gradually.
 14. **Audio.** All sound is procedural Web Audio: an engine with gear changes, tyre squeal, crashes, rain, thunder and
     countdown beeps.
-15. **Saves.** Money, reputation (street, rally, circuit, off-road and drag), maths level and best times are
+15. **Saves.** Money, reputation (street, rally, circuit, off-road and drag) and best times are
     saved in IndexedDB.
 
 ### How the lighting works
@@ -110,7 +109,6 @@ src/
   systems/DayNight.ts       time of day: world tint + night factor for lights
   systems/{Weather,Audio,Input,Save}.ts
   ui/{Hud,TouchControls,Menus}.ts
-  edu/Nova.ts               adaptive maths questions + Nova portrait
 ```
 
 Performance notes: the world is baked into chunk textures, so each chunk is 3 sprites (base, wet and night layers).
@@ -136,4 +134,4 @@ Each class has its own silhouette (body outline, cabin position, wheel stance an
 ![All vehicles](docs/screenshots/cars.png)
 
 ![Mobile landscape with touch controls](docs/screenshots/mobile.png)
-![Race results with Nova's bonus question](docs/screenshots/results.png)
+![Race results](docs/screenshots/results.png)
