@@ -97,15 +97,16 @@ export function drawNova(c: HTMLCanvasElement) {
     g.fillRect(x, y, w, h);
   };
   g.clearRect(0, 0, 24, 24);
-  px(6, 2, 12, 3, '#2bf0ff');
-  px(4, 4, 16, 9, '#2bf0ff');
-  px(5, 5, 14, 8, '#0e1a2e');
-  px(6, 7, 12, 4, '#ff2bd6');
-  px(7, 8, 3, 1, '#ffd2f2');
-  px(6, 12, 12, 5, '#c9e9ff');
-  px(9, 14, 6, 1, '#ff6ab8');
-  px(8, 17, 8, 2, '#c9e9ff');
-  px(3, 19, 18, 5, '#7a2bff');
-  px(11, 19, 2, 5, '#2bf0ff');
+  // racing helmet with a tinted visor, team jacket
+  px(6, 2, 12, 3, '#e03a2e');
+  px(4, 4, 16, 9, '#e03a2e');
+  px(5, 5, 14, 8, '#f2f2f2');
+  px(6, 7, 12, 4, '#2a3a52');
+  px(7, 8, 3, 1, '#8aaac8');
+  px(6, 12, 12, 5, '#e8c4a0');
+  px(9, 14, 6, 1, '#a0604a');
+  px(8, 17, 8, 2, '#e8c4a0');
+  px(3, 19, 18, 5, '#24344e');
+  px(11, 19, 2, 5, '#f0b429');
   px(4, 4, 1, 1, '#ffffff');
 }

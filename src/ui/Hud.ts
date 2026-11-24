@@ -6,18 +6,18 @@ import { Tile } from '../world/Tiles';
 const $ = (id: string) => document.getElementById(id)!;
 
 const MINI_COL: Record<number, string> = {
-  [Tile.ROAD]: '#5a5f73',
-  [Tile.SIDEWALK]: '#2a2c36',
-  [Tile.BUILDING]: '#14151d',
-  [Tile.GRASS]: '#173a22',
-  [Tile.SAND]: '#6a5c40',
-  [Tile.WATER]: '#0b2a4a',
-  [Tile.GRAVEL]: '#47433c',
-  [Tile.MUD]: '#3a2a1c',
-  [Tile.PARKING]: '#3a3d4c',
-  [Tile.PLAZA]: '#5a2a6a',
-  [Tile.ALLEY]: '#3a3c48',
-  [Tile.BOARDWALK]: '#4a3826',
+  [Tile.ROAD]: '#d8d8d4',
+  [Tile.SIDEWALK]: '#a8a49a',
+  [Tile.BUILDING]: '#6c6a66',
+  [Tile.GRASS]: '#7aa85a',
+  [Tile.SAND]: '#e6d49c',
+  [Tile.WATER]: '#4a8cc0',
+  [Tile.GRAVEL]: '#a8a092',
+  [Tile.MUD]: '#8a6a48',
+  [Tile.PARKING]: '#c4c4c0',
+  [Tile.PLAZA]: '#d8b878',
+  [Tile.ALLEY]: '#b8b8b4',
+  [Tile.BOARDWALK]: '#b08a60',
 };
 
 export interface Marker {
@@ -40,6 +40,7 @@ export interface HudFrame {
   route?: { x: number; y: number }[];
   race?: { pos: number; total: number; lap: number; laps: number; time: number; cpAngle: number | null };
   fps?: number;
+  night?: number;
 }
 
 export const fmtTime = (t: number) => {
@@ -152,7 +153,7 @@ export class Hud {
     const frac = Math.min(1, Math.abs(f.speed) / (f.maxSpeed * 1.05));
     g.lineCap = 'butt';
     g.lineWidth = 9 * k;
-    g.strokeStyle = 'rgba(20,20,40,0.75)';
+    g.strokeStyle = 'rgba(20,22,28,0.7)';
     g.beginPath();
     g.arc(cx, cy, r, a0, 0);
     g.stroke();
@@ -160,21 +161,24 @@ export class Hud {
     for (let i = 0; i < segs; i++) {
       const t = i / segs;
       if (t > frac) break;
-      g.strokeStyle = t > 0.8 ? '#ff2b6a' : t > 0.55 ? '#ff2bd6' : '#2bf0ff';
+      g.strokeStyle = t > 0.8 ? '#e03a2e' : t > 0.55 ? '#f0b429' : '#f2f2f2';
       g.beginPath();
       g.arc(cx, cy, r, a0 + t * Math.PI, a0 + (t + 1 / segs - 0.012) * Math.PI);
       g.stroke();
     }
     g.fillStyle = '#ffffff';
     g.textAlign = 'center';
-    g.font = `bold ${34 * k}px "Courier New", monospace`;
+    g.font = `italic 800 ${34 * k}px system-ui, "Segoe UI", Roboto, Arial, sans-serif`;
+    g.shadowColor = 'rgba(0,0,0,0.8)';
+    g.shadowBlur = 4 * k;
     g.fillText(String(toKmh(f.speed)), cx, cy - 18 * k);
-    g.font = `bold ${11 * k}px "Courier New", monospace`;
-    g.fillStyle = '#9ab';
+    g.font = `bold ${11 * k}px system-ui, "Segoe UI", Roboto, Arial, sans-serif`;
+    g.fillStyle = '#c8ccd4';
     g.fillText('KM/H', cx, cy - 4 * k);
+    g.shadowBlur = 0;
     // damage bar
     const dw = 60 * k;
-    g.fillStyle = 'rgba(20,20,40,0.8)';
+    g.fillStyle = 'rgba(20,22,28,0.8)';
     g.fillRect(cx - dw / 2, cy + 2 * k, dw, 4 * k);
     g.fillStyle = f.damage > 66 ? '#ff3b3b' : f.damage > 33 ? '#ffb02b' : '#7dff5a';
     g.fillRect(cx - dw / 2, cy + 2 * k, dw * (1 - f.damage / 100), 4 * k);
@@ -190,13 +194,17 @@ export class Hud {
     const sx = ptx - span / 2;
     const sy = pty - span / 2;
     g.imageSmoothingEnabled = false;
-    g.fillStyle = '#05050a';
+    g.fillStyle = '#4a8cc0';
     g.fillRect(0, 0, W, W);
     g.drawImage(this.base, sx, sy, span, span, 0, 0, W, W);
+    if (f.night) {
+      g.fillStyle = `rgba(20,30,60,${f.night * 0.45})`;
+      g.fillRect(0, 0, W, W);
+    }
     const toS = (x: number, y: number) => [(x / TILE - sx) * scale, (y / TILE - sy) * scale] as const;
 
     if (f.route && f.route.length > 1) {
-      g.strokeStyle = 'rgba(255,224,43,0.6)';
+      g.strokeStyle = 'rgba(224,90,30,0.85)';
       g.lineWidth = 2.5 * (W / 150);
       g.beginPath();
       f.route.forEach((p, i) => {
@@ -232,9 +240,9 @@ export class Hud {
             g.fillRect(x + 1 * k + i * 2 * k, y - 7 * k + j * 2 * k, 2 * k, 2 * k);
           }
       } else {
-        g.fillStyle = '#0b2030';
-        g.fillRect(x - 5 * k, y - 5 * k, 10 * k, 10 * k);
         g.fillStyle = m.color;
+        g.fillRect(x - 5 * k, y - 5 * k, 10 * k, 10 * k);
+        g.fillStyle = '#ffffff';
         g.font = `bold ${9 * k}px monospace`;
         g.textAlign = 'center';
         g.fillText('G', x, y + 3 * k);
@@ -246,8 +254,8 @@ export class Hud {
     g.save();
     g.translate(px, py);
     g.rotate(f.player.angle);
-    g.fillStyle = '#ffffff';
-    g.strokeStyle = '#000';
+    g.fillStyle = '#e03a2e';
+    g.strokeStyle = '#ffffff';
     g.lineWidth = 1.5 * k;
     g.beginPath();
     g.moveTo(7 * k, 0);

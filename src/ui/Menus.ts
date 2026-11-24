@@ -24,6 +24,7 @@ export interface PauseOptions {
   ctlScale: number;
   mathsLevel: number;
   onResume(): void;
+  onTime(hour: number): void;
   onZoom(z: number): void;
   onTouch(on: boolean): void;
   onEditControls(): void;
@@ -39,6 +40,7 @@ export function showPause(o: PauseOptions) {
   const p = open(`
     <h2>PAUSED</h2>
     <button class="big" data-a="resume">RESUME</button>
+    <div class="row"><span>TIME OF DAY</span><span class="seg"><button data-h="12">DAY</button><button data-h="18.3">SUNSET</button><button data-h="22">NIGHT</button></span></div>
     <div class="row"><span>ZOOM</span><input type="range" min="0.6" max="1.6" step="0.05" value="${o.zoom}" data-a="zoom"></div>
     <div class="row"><span>TOUCH CONTROLS</span><button data-a="touch">${o.touch ? 'ON' : 'OFF'}</button></div>
     <div class="row"><span>CONTROL SIZE</span><input type="range" min="0.6" max="1.6" step="0.05" value="${o.ctlScale}" data-a="scale"></div>
@@ -49,6 +51,7 @@ export function showPause(o: PauseOptions) {
     <p class="help">Keyboard: <b>W/↑</b> gas · <b>S/↓</b> brake/reverse · <b>A D/← →</b> steer · <b>SPACE</b> drift · <b>E</b> interact · <b>+/-</b> zoom · <b>ESC</b> pause</p>
     <p class="help">Nova maths level: ${o.mathsLevel}</p>`);
   p.querySelector('[data-a=resume]')!.addEventListener('click', () => o.onResume());
+  p.querySelectorAll<HTMLButtonElement>('[data-h]').forEach((b) => b.addEventListener('click', () => o.onTime(Number(b.dataset.h))));
   (p.querySelector('[data-a=zoom]') as HTMLInputElement).addEventListener('input', (e) => o.onZoom(Number((e.target as HTMLInputElement).value)));
   (p.querySelector('[data-a=scale]') as HTMLInputElement).addEventListener('input', (e) => o.onCtlScale(Number((e.target as HTMLInputElement).value)));
   const toggle = (sel: string, get: () => boolean, set: (v: boolean) => void, onText = 'ON', offText = 'OFF') => {

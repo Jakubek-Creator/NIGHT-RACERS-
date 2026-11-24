@@ -240,32 +240,37 @@ export function registerTextures(scene: Phaser.Scene): SpriteBank {
     const w = textWidth(label, 2) + 8;
     const c = makeCanvas(w, 14);
     const g = c.getContext('2d')!;
-    g.fillStyle = 'rgba(5,5,12,0.85)';
+    g.fillStyle = '#ffffff';
     g.fillRect(0, 0, w, 14);
-    drawText(g, label, 4, 2, 2, '#ffffff');
+    g.fillStyle = label === 'RACE' ? '#e03a2e' : '#3a8bd8';
+    g.fillRect(0, 12, w, 2);
+    drawText(g, label, 4, 2, 2, '#1c1c22');
     tex.addCanvas('label_' + label, c);
   }
   return { trafficKeys, carCanvas, trafficCanvases };
 }
 
-/** Pixel neon sign texture (cached by content). */
+/** Painted shop-sign board texture (cached by content). */
 export function signTexture(scene: Phaser.Scene, s: Sign): string {
   const key = `sign_${s.text}_${s.color}_${s.vertical ? 'v' : 'h'}`;
   if (scene.textures.exists(key)) return key;
-  const col = hexStr(s.color);
+  const board = hexStr(s.color);
+  const light = ((s.color >> 16) & 255) + ((s.color >> 8) & 255) + (s.color & 255) > 500;
+  const ink = light ? '#2a2a30' : '#f4f1e8';
   const w = s.vertical ? 12 : textWidth(s.text, 2) + 8;
   const h = s.vertical ? s.text.length * 12 + 4 : 16;
-  const c = makeCanvas(w, h);
+  const c = makeCanvas(w + 1, h + 1);
   const g = c.getContext('2d')!;
-  g.fillStyle = '#07060d';
+  g.fillStyle = 'rgba(0,0,0,0.35)'; // drop shadow
+  g.fillRect(1, 1, w, h);
+  g.fillStyle = shade(board, -0.4);
   g.fillRect(0, 0, w, h);
-  g.fillStyle = shade(col, -0.55);
-  g.fillRect(0, 0, w, 1);
-  g.fillRect(0, h - 1, w, 1);
-  g.fillRect(0, 0, 1, h);
-  g.fillRect(w - 1, 0, 1, h);
-  if (s.vertical) drawTextVertical(g, s.text, 3, 3, 2, col);
-  else drawText(g, s.text, 4, 3, 2, col);
+  g.fillStyle = board;
+  g.fillRect(1, 1, w - 2, h - 2);
+  g.fillStyle = shade(board, 0.25);
+  g.fillRect(1, 1, w - 2, 1);
+  if (s.vertical) drawTextVertical(g, s.text, 3, 3, 2, ink);
+  else drawText(g, s.text, 4, 3, 2, ink);
   scene.textures.addCanvas(key, c);
   return key;
 }

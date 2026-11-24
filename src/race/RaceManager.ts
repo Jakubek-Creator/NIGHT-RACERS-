@@ -21,9 +21,9 @@ export interface RaceDef {
   rep: number[];
 }
 
-export const NEON_SPRINT: RaceDef = {
-  id: 'neon-loop',
-  name: 'NEON LOOP',
+export const DOWNTOWN_LOOP: RaceDef = {
+  id: 'downtown-loop',
+  name: 'DOWNTOWN LOOP',
   type: 'STREET',
   laps: 2,
   route: [[6, 3], [6, 6], [4, 6], [4, 7], [1, 7], [1, 3], [3, 3]],
@@ -59,7 +59,7 @@ export class RaceManager {
   bestLapStart = 0;
   lastLapTimes: number[] = [];
 
-  constructor(private scene: Phaser.Scene, _map: CityMap, readonly def: RaceDef = NEON_SPRINT) {
+  constructor(private scene: Phaser.Scene, _map: CityMap, readonly def: RaceDef = DOWNTOWN_LOOP) {
     this.startX = (3 * 16 + 2 + 8) * TILE;
     this.startY = nodePos(3);
     for (const [i, j] of def.route) this.checkpoints.push({ x: nodePos(i), y: nodePos(j), r: 110 });
@@ -86,7 +86,7 @@ export class RaceManager {
       [this.startX - 100, this.startY - 30],
       [this.startX - 100, this.startY + 30],
     ];
-    const colors = [0xff2bd6, 0xffe02b, 0x7dff5a, 0xff6a2b];
+    const colors = [0xd83a2e, 0xf0b429, 0x3fae5a, 0xe8772e];
     this.entries = [];
     const points = this.checkpoints.map((c) => ({ x: c.x, y: c.y }));
     rivals.forEach((p, k) => {
@@ -97,7 +97,7 @@ export class RaceManager {
     });
     player.place(slots[3][0], slots[3][1], 0);
     player.damage = Math.min(player.damage, 40);
-    this.entries.push({ name: 'YOU', car: player, isPlayer: true, lap: 0, cp: 0, finished: false, finishTime: 0, color: 0x2bf0ff });
+    this.entries.push({ name: 'YOU', car: player, isPlayer: true, lap: 0, cp: 0, finished: false, finishTime: 0, color: 0x3a8bd8 });
     this.state = 'countdown';
     this.countdown = 3.2;
     this.time = 0;
@@ -187,7 +187,7 @@ export class RaceManager {
     const cp = this.checkpoints[p.cp];
     const after = this.checkpoints[(p.cp + 1) % this.checkpoints.length];
     const isFinish = p.cp === this.checkpoints.length - 1 && p.lap === this.def.laps - 1;
-    const col = isFinish ? 0xffffff : 0xffe02b;
+    const col = isFinish ? 0xffffff : 0xf0b429;
     if (p.cp === this.checkpoints.length - 1) {
       // chequered start/finish line across the road
       for (let i = 0; i < 8; i++)

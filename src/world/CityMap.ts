@@ -20,9 +20,9 @@ export interface Sign {
   x: number; // px centre
   y: number;
   text: string;
-  color: number;
+  color: number; // board colour
   vertical: boolean;
-  flicker: boolean;
+  lit: boolean; // gently lit after dark
 }
 
 export type PropKind = 'tree' | 'palm' | 'lamp' | 'cone' | 'parked' | 'collider' | 'bench' | 'barrier';
@@ -36,14 +36,15 @@ export interface Prop {
   variant: number;
 }
 
-export type BlockKind = 'downtown' | 'park' | 'parking' | 'construction' | 'festival' | 'garage' | 'coast';
+export type BlockKind = 'downtown' | 'park' | 'parking' | 'construction' | 'fair' | 'garage' | 'coast';
 
-export const NEON = [0xff2bd6, 0x2bf0ff, 0xffe02b, 0x7dff5a, 0xff6a2b, 0xa35bff, 0xff3b5c];
-const WORDS = ['BAR', '24/7', 'HOTEL', 'NOVA', 'PIZZA', 'RAMEN', 'CLUB', 'DINER', 'ARCADE', 'MOTEL', 'TACO', 'JAZZ', 'NEON', 'GYM', 'CAFE', 'SUSHI', 'TOYS', 'BOWL', 'DISCO', 'PAWN', 'TATTOO', 'NOODLE', 'CINEMA', 'HI-FI', 'VIDEO'];
+/** Painted shop-sign board colours: red, blue, green, cream, charcoal, mustard. */
+export const SIGN_COLORS = [0xb8322a, 0x2a5aa0, 0x2f7a46, 0xe8e2d0, 0x3a3a40, 0xd89a2a];
+const WORDS = ['BAR', 'BANK', 'HOTEL', 'BAKERY', 'PIZZA', 'BOOKS', 'MARKET', 'DINER', 'DELI', 'MOTEL', 'CAFE', 'GYM', 'TOOLS', 'BARBER', 'TOYS', 'SHOES', 'FLORIST', 'POST', 'PETS', 'PAINT', 'CINEMA', 'TAXI', 'TYRES', 'PHARMACY', 'BISTRO'];
 
-/** Hand-placed block layout for the Neon City prototype (bi,bj grid cells). */
+/** Hand-placed block layout for the Bayview downtown prototype (bi,bj grid cells). */
 const LAYOUT: Record<string, BlockKind> = {
-  '3,3': 'festival',
+  '3,3': 'fair',
   '2,3': 'garage',
   '1,1': 'park',
   '5,6': 'park',
@@ -67,7 +68,6 @@ export class CityMap {
   readonly signs: Sign[] = [];
   readonly bays: Bay[] = [];
   readonly blocks: BlockKind[][] = [];
-  readonly beams: { x: number; y: number; color: number; phase: number }[] = [];
   private readonly propGrid: Prop[][] = new Array(MAP_W * MAP_H);
 
   readonly zones = {
@@ -154,8 +154,8 @@ export class CityMap {
           case 'construction':
             this.makeConstruction(x0, y0, rng);
             break;
-          case 'festival':
-            this.makeFestival(x0, y0, rng);
+          case 'fair':
+            this.makeFair(x0, y0, rng);
             break;
           case 'garage':
             this.makeGarage(x0, y0, rng);
@@ -249,7 +249,7 @@ export class CityMap {
     return b;
   }
 
-  /** Neon sign on a building edge that faces the street. */
+  /** Shop sign on a building edge that faces the street. */
   private maybeSign(b: Building, rng: () => number, x0: number, y0: number, chance: number, forced?: { text: string; side: number; color: number }) {
     if (!forced && rng() > chance) return;
     const S = BLOCK - ROAD_W;
@@ -274,7 +274,7 @@ export class CityMap {
     if (side === 2) y = (b.y + b.h) * TILE - wall - 9;
     if (side === 3) x = b.x * TILE + 8;
     if (side === 1) x = (b.x + b.w) * TILE - wall - 8;
-    this.signs.push({ x, y, text, vertical, color: forced ? forced.color : NEON[Math.floor(rng() * NEON.length)], flicker: rng() < 0.2 });
+    this.signs.push({ x, y, text, vertical, color: forced ? forced.color : SIGN_COLORS[Math.floor(rng() * SIGN_COLORS.length)], lit: rng() < 0.5 });
   }
 
   private makePark(x0: number, y0: number, rng: () => number) {
@@ -353,22 +353,18 @@ export class CityMap {
       this.props.push({ kind: 'barrier', x: (x0 + 2 + i * 3) * TILE, y: (y0 + 4) * TILE, r: 0, solid: false, angle: rng() * Math.PI, variant: 0 });
   }
 
-  private makeFestival(x0: number, y0: number, rng: () => number) {
+  /** Bayview Motor Fair: the hub plaza where races start. */
+  private makeFair(x0: number, y0: number, rng: () => number) {
     const S = BLOCK - ROAD_W;
     this.fill(x0, y0, S, S, Tile.PLAZA);
     const stage = this.addBuilding(x0 + 2, y0 + 8, 8, 3, 2, 'stage', rng);
     stage.style = 4;
-    this.signs.push({ x: (x0 + 6) * TILE, y: (y0 + 8) * TILE + 9, text: 'NEON BAY FESTIVAL', color: 0xff2bd6, vertical: false, flicker: false });
-    this.beams.push(
-      { x: (x0 + 2.5) * TILE, y: (y0 + 8.5) * TILE, color: 0xff2bd6, phase: 0 },
-      { x: (x0 + 6) * TILE, y: (y0 + 8.3) * TILE, color: 0x2bf0ff, phase: 2 },
-      { x: (x0 + 9.5) * TILE, y: (y0 + 8.5) * TILE, color: 0xffe02b, phase: 4 },
-    );
+    this.signs.push({ x: (x0 + 6) * TILE, y: (y0 + 8) * TILE + 9, text: 'BAYVIEW MOTOR FAIR', color: 0xb8322a, vertical: false, lit: true });
     // food trucks
     this.parkedCar((x0 + 1) * TILE, (y0 + 5) * TILE, Math.PI / 2, rng);
     this.parkedCar((x0 + 11) * TILE, (y0 + 5) * TILE, -Math.PI / 2, rng);
     for (let i = 1; i < S; i += 3) {
-      this.props.push({ kind: 'lamp', x: (x0 + i) * TILE + 16, y: y0 * TILE + 6, r: 3, solid: true, angle: -Math.PI / 2, variant: 1 });
+      this.props.push({ kind: 'lamp', x: (x0 + i) * TILE + 16, y: y0 * TILE + 6, r: 3, solid: true, angle: -Math.PI / 2, variant: 0 });
     }
   }
 
@@ -378,7 +374,7 @@ export class CityMap {
     this.fill(x0, y0, S, 5, Tile.PARKING);
     const b = this.addBuilding(x0 + 1, y0 + 5, 10, 6, 2, 'garage', rng);
     b.style = 3;
-    this.signs.push({ x: (x0 + 6) * TILE, y: (y0 + 5) * TILE + 9, text: 'GARAGE', color: 0x2bf0ff, vertical: false, flicker: false });
+    this.signs.push({ x: (x0 + 6) * TILE, y: (y0 + 5) * TILE + 9, text: 'GARAGE', color: 0x2a5aa0, vertical: false, lit: true });
     this.zones.garage = { x: (x0 + 6) * TILE, y: (y0 + 2.5) * TILE };
     this.parkedCar((x0 + 1) * TILE + 16, (y0 + 2) * TILE, Math.PI / 2, rng);
     this.parkedCar((x0 + 10) * TILE + 16, (y0 + 2) * TILE, Math.PI / 2, rng);

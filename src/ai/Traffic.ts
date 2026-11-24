@@ -122,14 +122,15 @@ export class TrafficCar implements Body {
     }
   }
 
-  sync(braking: boolean) {
+  sync(braking: boolean, night: number) {
     const c = Math.cos(this.angle);
     const s = Math.sin(this.angle);
     this.sprite.setPosition(this.x, this.y).setRotation(this.angle);
     this.shadow.setPosition(this.x + 3, this.y + 4).setRotation(this.angle);
-    this.cone.setPosition(this.x + c * (this.len / 2), this.y + s * (this.len / 2)).setRotation(this.angle);
+    this.cone.setPosition(this.x + c * (this.len / 2), this.y + s * (this.len / 2)).setRotation(this.angle).setAlpha(0.26 * night);
+    this.shadow.setAlpha(0.45 * (1 - 0.6 * night));
     this.tail.setPosition(this.x - c * (this.len / 2), this.y - s * (this.len / 2)).setScale(braking ? 0.55 : 0.4, braking ? 0.7 : 0.5).setRotation(this.angle);
-    this.tail.setAlpha(braking ? 0.9 : 0.35);
+    this.tail.setAlpha(braking ? 0.9 : 0.1 + 0.25 * night);
   }
 }
 
@@ -207,7 +208,7 @@ export class TrafficSystem {
     for (const c of this.cars) if (c.active && Math.hypot(c.x - x, c.y - y) < r) this.despawn(c);
   }
 
-  update(dt: number, px: number, py: number, view: Phaser.Geom.Rectangle, others: Body[]) {
+  update(dt: number, px: number, py: number, view: Phaser.Geom.Rectangle, others: Body[], night = 0) {
     this.time += dt;
     for (const c of this.cars) {
       if (!c.active) {
@@ -223,7 +224,7 @@ export class TrafficSystem {
       this.step(c, dt, near, others);
       const vis = c.x > view.x - 64 && c.x < view.right + 64 && c.y > view.y - 64 && c.y < view.bottom + 64;
       c.setVisible(vis);
-      if (vis) c.sync(c.speed < c.cruise * 0.5);
+      if (vis) c.sync(c.speed < c.cruise * 0.5, night);
     }
   }
 

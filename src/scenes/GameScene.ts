@@ -7,6 +7,7 @@ import { registerTextures, SpriteBank, hexStr } from '../gfx/SpriteFactory';
 import { collideBodies, collideKinematic, collideWorld } from '../physics/Collision';
 import { RaceManager } from '../race/RaceManager';
 import { AudioEngine } from '../systems/Audio';
+import { DayNight } from '../systems/DayNight';
 import { Input } from '../systems/Input';
 import { SaveData, writeSave } from '../systems/Save';
 import { Weather } from '../systems/Weather';
@@ -28,6 +29,8 @@ export class GameScene extends Phaser.Scene {
   private traffic!: TrafficSystem;
   private race!: RaceManager;
   private weather!: Weather;
+  private dayNight = new DayNight(Number(new URLSearchParams(location.search).get('hour') ?? 15) % 24);
+  private darkness!: Phaser.GameObjects.Rectangle;
   private sound2 = new AudioEngine();
   private touch!: TouchControls;
   private input2!: Input;
@@ -64,7 +67,7 @@ export class GameScene extends Phaser.Scene {
     this.chunks = new ChunkManager(this, this.map, (v) => tc[v % tc.length]);
 
     const sp = this.map.zones.spawn;
-    this.player = new Vehicle(this, vehicleById('vandal'), sp.x, sp.y, sp.angle, { underglow: 0xff2bd6 });
+    this.player = new Vehicle(this, vehicleById('vandal'), sp.x, sp.y, sp.angle);
     this.traffic = new TrafficSystem(this, 34);
     this.race = new RaceManager(this, this.map);
     this.weather = new Weather(document.getElementById('fx') as HTMLCanvasElement);
@@ -82,8 +85,10 @@ export class GameScene extends Phaser.Scene {
       lifespan: 1100, speed: { min: 8, max: 25 }, scale: { start: 0.4, end: 2 }, alpha: { start: 0.35, end: 0 }, tint: 0x555555, emitting: false,
     }).setDepth(DEPTH.light + 0.1);
 
-    this.addMarker(this.map.zones.raceStart.x, this.map.zones.raceStart.y, 0xffe02b, 'label_RACE');
-    this.addMarker(this.map.zones.garage.x, this.map.zones.garage.y, 0x2bf0ff, 'label_GARAGE');
+    this.addMarker(this.map.zones.raceStart.x, this.map.zones.raceStart.y, 0xf0b429, 'label_RACE');
+    this.addMarker(this.map.zones.garage.x, this.map.zones.garage.y, 0x3a8bd8, 'label_GARAGE');
+    // day/night: everything below this multiply layer is tinted by the time of day
+    this.darkness = this.add.rectangle(0, 0, 10, 10, 0xffffff).setDepth(DEPTH.darkness).setBlendMode(Phaser.BlendModes.MULTIPLY);
 
     const cam = this.cameras.main;
     cam.setBounds(0, 0, WORLD_W, WORLD_H);
@@ -95,8 +100,8 @@ export class GameScene extends Phaser.Scene {
     cam.setZoom(this.zoom);
     cam.centerOn(this.camX, this.camY);
     this.updateView();
-    this.chunks.update(this.view, 0, this.weather.wetness);
-    this.traffic.update(0, this.player.x, this.player.y, new Phaser.Geom.Rectangle(), []);
+    this.chunks.update(this.view, 0, this.weather.wetness, this.dayNight.night);
+    this.traffic.update(0, this.player.x, this.player.y, new Phaser.Geom.Rectangle(), [], this.dayNight.night);
 
     document.getElementById('pauseBtn')!.addEventListener('click', () => this.togglePause());
     document.addEventListener('visibilitychange', () => {
@@ -110,10 +115,10 @@ export class GameScene extends Phaser.Scene {
 
     document.getElementById('loading')!.classList.add('hidden');
     if (!this.save.seenIntro) {
-      this.hud.nova("Hi, I'm Nova! Welcome to Neon Bay. Cruise the city, then head to the festival flag to start the NEON LOOP race.", 8000);
+      this.hud.nova("Hi, I'm Nova! Welcome to Bayview. Cruise around town, then head to the Motor Fair flag to start the DOWNTOWN LOOP race.", 8000);
       this.save.seenIntro = true;
       writeSave(this.save);
-    } else this.hud.nova('Welcome back to Neon Bay! The NEON LOOP race is waiting at the festival.', 4500);
+    } else this.hud.nova('Welcome back to Bayview! The DOWNTOWN LOOP race is waiting at the Motor Fair.', 4500);
   }
 
   private addMarker(x: number, y: number, color: number, label: string) {
@@ -121,7 +126,7 @@ export class GameScene extends Phaser.Scene {
     ring.lineStyle(3, color, 0.9).strokeCircle(x, y, 28);
     ring.fillStyle(color, 0.12).fillCircle(x, y, 28);
     const glow = this.add.image(x, y, 'glow').setTint(color).setScale(2.2).setAlpha(0.4).setDepth(DEPTH.light).setBlendMode(Phaser.BlendModes.ADD);
-    const lab = this.add.image(x, y - 40, label).setDepth(DEPTH.sign);
+    const lab = this.add.image(x, y - 40, label).setDepth(DEPTH.marker);
     this.markerFx.push({ ring, glow, label: lab, x, y });
   }
 
@@ -156,6 +161,11 @@ export class GameScene extends Phaser.Scene {
       ctlScale: this.touch.scale,
       mathsLevel: this.save.maths.level,
       onResume: () => this.togglePause(),
+      onTime: (h) => {
+        this.dayNight.hour = h;
+        this.dayNight.update(0);
+        this.togglePause();
+      },
       onZoom: (z) => (this.userZoom = z),
       onTouch: (on) => this.touch.setEnabled(on),
       onEditControls: () => {
@@ -262,13 +272,21 @@ export class GameScene extends Phaser.Scene {
       p.damage = Math.min(100, p.damage + k * 14);
       if (navigator.vibrate && k > 0.3) navigator.vibrate(30 + k * 60);
     }
-    for (const v of dyn) v.sync();
+    this.dayNight.update(dt);
+    const night = this.dayNight.night;
+    for (const v of dyn) v.sync(night);
 
     this.effects(dyn, dt);
     this.updateCamera(dt);
     this.updateView();
-    this.traffic.update(dt, p.x, p.y, this.view, dyn);
-    this.chunks.update(this.view, this.time0, this.weather.wetness);
+    this.traffic.update(dt, p.x, p.y, this.view, dyn, night);
+    this.chunks.update(this.view, this.time0, this.weather.wetness, night);
+    // rain also dims the daylight a little
+    const tint = this.dayNight.tint;
+    const dim = 1 - this.weather.rain * 0.22;
+    const ch = (s: number) => Math.round(((tint >> s) & 255) * dim);
+    this.darkness.setFillStyle((ch(16) << 16) | (ch(8) << 8) | ch(0));
+    this.darkness.setPosition(this.view.centerX, this.view.centerY).setSize(this.view.width + 200, this.view.height + 200);
     this.weather.update(dt, this.camX, this.camY, this.zoom);
     this.race.pulse(this.time0);
     this.updateContext(frame.interact);
@@ -348,7 +366,7 @@ export class GameScene extends Phaser.Scene {
       this.race.end();
       this.resultsShown = false;
       this.hud.toast(`+$${total}${bonus ? ' (NOVA BONUS!)' : ''}`);
-      this.hud.nova(place === 1 ? 'Amazing driving! Race again any time at the festival flag.' : 'Good run! Try the parking-lot shortcuts next time.', 4500);
+      this.hud.nova(place === 1 ? 'Amazing driving! Race again any time at the Motor Fair flag.' : 'Good run! Try the parking-lot shortcuts next time.', 4500);
     });
   }
 
@@ -364,7 +382,7 @@ export class GameScene extends Phaser.Scene {
     if (ctx !== this.context) {
       this.context = ctx;
       this.touch.setAction(ctx === 'race' ? 'RACE' : ctx === 'garage' ? 'REPAIR' : null);
-      if (ctx === 'race') this.hud.toast(this.touch.enabled ? 'TAP RACE TO START NEON LOOP' : 'PRESS E TO START NEON LOOP', 3000);
+      if (ctx === 'race') this.hud.toast(this.touch.enabled ? 'TAP RACE TO START DOWNTOWN LOOP' : 'PRESS E TO START DOWNTOWN LOOP', 3000);
       if (ctx === 'garage') this.hud.toast(this.touch.enabled ? 'TAP REPAIR TO FIX YOUR CAR' : 'PRESS E TO REPAIR', 3000);
     }
     for (const m of this.markerFx) {
@@ -381,7 +399,7 @@ export class GameScene extends Phaser.Scene {
       this.camX = p.x;
       this.camY = p.y;
       this.lastCountdown = -1;
-      this.hud.nova('Two laps of Neon City. Follow the yellow checkpoints. Beat the rivals!', 3500);
+      this.hud.nova('Two laps of downtown Bayview. Follow the yellow checkpoints. Beat the rivals!', 3500);
     } else if (ctx === 'garage') {
       if (p.damage < 1) this.hud.toast('YOUR CAR IS ALREADY PERFECT');
       else {
@@ -439,13 +457,13 @@ export class GameScene extends Phaser.Scene {
   private hudFrame() {
     const p = this.player;
     const markers: Marker[] = [];
-    for (const c of this.traffic.cars) if (c.active) markers.push({ x: c.x, y: c.y, color: 'rgba(230,230,240,0.55)', kind: 'dot' });
+    for (const c of this.traffic.cars) if (c.active) markers.push({ x: c.x, y: c.y, color: 'rgba(40,40,48,0.7)', kind: 'dot' });
     const race = this.race;
     let raceInfo;
     if (race.active) {
       for (const e of race.entries) if (!e.isPlayer) markers.push({ x: e.car.x, y: e.car.y, color: hexStr(e.color), kind: 'dot' });
       const cp = race.nextCheckpoint();
-      if (cp && race.state !== 'finished') markers.push({ x: cp.x, y: cp.y, color: '#ffe02b', kind: 'ring' });
+      if (cp && race.state !== 'finished') markers.push({ x: cp.x, y: cp.y, color: '#f0b429', kind: 'ring' });
       raceInfo = {
         pos: race.position(),
         total: race.entries.length,
@@ -455,8 +473,8 @@ export class GameScene extends Phaser.Scene {
         cpAngle: cp && race.state === 'running' ? Math.atan2(cp.y - p.y, cp.x - p.x) : null,
       };
     } else {
-      markers.push({ x: this.map.zones.raceStart.x, y: this.map.zones.raceStart.y, color: '#ffe02b', kind: 'flag' });
-      markers.push({ x: this.map.zones.garage.x, y: this.map.zones.garage.y, color: '#2bf0ff', kind: 'wrench' });
+      markers.push({ x: this.map.zones.raceStart.x, y: this.map.zones.raceStart.y, color: '#f0b429', kind: 'flag' });
+      markers.push({ x: this.map.zones.garage.x, y: this.map.zones.garage.y, color: '#3a8bd8', kind: 'wrench' });
     }
     return {
       speed: p.forward,
@@ -465,10 +483,11 @@ export class GameScene extends Phaser.Scene {
       damage: p.damage,
       money: this.save.money,
       streetRep: this.save.rep.street,
-      weather: this.weather.label,
+      weather: `${this.dayNight.clock} · ${this.weather.label}`,
       player: { x: p.x, y: p.y, angle: p.angle },
       markers,
       route: race.active ? race.checkpoints : undefined,
+      night: this.dayNight.night,
       race: raceInfo,
       fps: this.showFps ? this.game.loop.actualFps : undefined,
     };

@@ -19,17 +19,18 @@ export const toKmh = (pxPerSec: number) => Math.round((Math.abs(pxPerSec) / PX_P
 /** World-space centre of grid intersection i (same formula for x and y). */
 export const nodePos = (i: number) => (i * BLOCK + ROAD_W / 2) * TILE;
 
+/** Everything below `darkness` is tinted by the day/night cycle; everything above is emissive light. */
 export const DEPTH = {
   ground: 0,
   wet: 1,
   skid: 2,
-  marker: 3,
   shadow: 4,
-  underglow: 4.5,
   car: 5,
-  light: 6,
-  sign: 7,
-  beam: 8,
+  sign: 5.5,
+  darkness: 5.9,
+  night: 6,
+  light: 6.2,
+  marker: 6.4,
 } as const;
 
 /** Direction vectors: 0=E 1=S 2=W 3=N (y grows downward). */

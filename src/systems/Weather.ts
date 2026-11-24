@@ -16,10 +16,10 @@ const STATES = [
 
 /** Dynamic weather: rain intensity drifts between states, roads get wet and dry slowly. */
 export class Weather {
-  rain = 0.55;
-  wetness = 0.8;
-  private target = 0.65;
-  private timer = 50;
+  rain = 0;
+  wetness = 0;
+  private target = 0;
+  private timer = 40;
   private drops: Drop[] = [];
   private ctx: CanvasRenderingContext2D;
   private flash = document.getElementById('flash')!;

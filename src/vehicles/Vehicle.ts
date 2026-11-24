@@ -41,9 +41,8 @@ export class Vehicle implements Body {
   readonly coneL: Phaser.GameObjects.Image;
   readonly tailL: Phaser.GameObjects.Image;
   readonly tailR: Phaser.GameObjects.Image;
-  readonly underglow?: Phaser.GameObjects.Image;
 
-  constructor(scene: Phaser.Scene, readonly def: VehicleDef, x: number, y: number, angle: number, opts: { underglow?: number } = {}) {
+  constructor(scene: Phaser.Scene, readonly def: VehicleDef, x: number, y: number, angle: number) {
     this.x = x;
     this.y = y;
     this.angle = angle;
@@ -55,8 +54,6 @@ export class Vehicle implements Body {
     this.mass = def.stats.mass;
     const key = 'car_' + def.id;
     this.shadow = scene.add.image(x, y, key).setTint(0x000000).setAlpha(0.5).setDepth(DEPTH.shadow);
-    if (opts.underglow !== undefined)
-      this.underglow = scene.add.image(x, y, 'glow').setTint(opts.underglow).setAlpha(0.55).setDepth(DEPTH.underglow).setBlendMode(Phaser.BlendModes.ADD);
     this.sprite = scene.add.image(x, y, key).setDepth(DEPTH.car);
     this.coneL = scene.add.image(x, y, 'cone').setOrigin(0, 0.5).setAlpha(0.32).setScale(1.1, 0.75).setDepth(DEPTH.light).setBlendMode(Phaser.BlendModes.ADD);
     this.tailL = scene.add.image(x, y, 'glow').setTint(0xff1030).setScale(0.32).setDepth(DEPTH.light).setBlendMode(Phaser.BlendModes.ADD);
@@ -133,20 +130,21 @@ export class Vehicle implements Body {
     this.slip = Math.abs(vr);
   }
 
-  sync() {
+  /** night 0..1 switches the headlights on after dusk. */
+  sync(night = 0) {
     const { x, y, angle } = this;
     const c = Math.cos(angle);
     const s = Math.sin(angle);
     this.sprite.setPosition(x, y).setRotation(angle);
     this.shadow.setPosition(x + 3, y + 4).setRotation(angle);
-    this.underglow?.setPosition(x, y).setRotation(angle).setScale(this.len / 40, this.wid / 34);
     const hl = this.len / 2 - 1;
-    this.coneL.setPosition(x + c * hl, y + s * hl).setRotation(angle);
+    this.coneL.setPosition(x + c * hl, y + s * hl).setRotation(angle).setAlpha(0.34 * night).setVisible(night > 0.05);
+    this.shadow.setAlpha(0.45 * (1 - 0.6 * night));
     const tb = this.len / 2 - 1;
     const side = this.wid / 2 - 3;
     this.tailL.setPosition(x - c * tb - s * side, y - s * tb + c * side);
     this.tailR.setPosition(x - c * tb + s * side, y - s * tb - c * side);
-    const a = this.braking ? 0.95 : 0.35;
+    const a = this.braking ? 0.95 : 0.12 + 0.25 * night;
     const sc = this.braking ? 0.5 : 0.3;
     this.tailL.setAlpha(a).setScale(sc);
     this.tailR.setAlpha(a).setScale(sc);
@@ -162,6 +160,6 @@ export class Vehicle implements Body {
   }
 
   destroy() {
-    for (const o of [this.sprite, this.shadow, this.coneL, this.tailL, this.tailR, this.underglow]) o?.destroy();
+    for (const o of [this.sprite, this.shadow, this.coneL, this.tailL, this.tailR]) o.destroy();
   }
 }
