@@ -122,7 +122,7 @@ export class ChunkManager {
 
     // street lamp heads (lit after dusk; the ground pool is baked into the night layer)
     for (const p of this.map.props) {
-      if (p.kind !== 'lamp' || !inChunk(p.x, p.y)) continue;
+      if (p.kind !== 'lamp' || p.knocked || !inChunk(p.x, p.y)) continue;
       const hx = p.x + Math.cos(p.angle) * 8;
       const hy = p.y + Math.sin(p.angle) * 8;
       ch.anims.push({ kind: 'lamp', glow: add(this.glow(hx, hy, LAMP, 0.6, 0)), base: 0.8 });
@@ -182,7 +182,25 @@ export class ChunkManager {
     }
   }
 
-  private unload(ch: Chunk) {
+  /** Rebuild every loaded chunk that draws something near (x, y). */
+  refreshAround(x: number, y: number) {
+    const m = 60;
+    for (let cy = Math.floor((y - m) / CHUNK_PX); cy <= Math.floor((y + m) / CHUNK_PX); cy++)
+      for (let cx = Math.floor((x - m) / CHUNK_PX); cx <= Math.floor((x + m) / CHUNK_PX); cx++) {
+        const ch = this.chunks.get(`${cx},${cy}`);
+        if (!ch) continue;
+        this.unload(ch, false);
+        this.ensure(cx, cy);
+      }
+  }
+
+  private unload(ch: Chunk, restore = true) {
+    if (restore) {
+      // knocked-over street furniture is back in place next time you come by
+      const [cx, cy] = ch.key.split(',').map(Number);
+      for (const p of this.map.props)
+        if (p.knocked && Math.floor(p.x / CHUNK_PX) === cx && Math.floor(p.y / CHUNK_PX) === cy) p.knocked = false;
+    }
     ch.base.destroy();
     ch.wet.destroy();
     ch.night.destroy();

@@ -3,6 +3,7 @@ import { DEPTH, DIRS, GRID, ROAD_W, TILE, nodePos } from '../config';
 import type { Body } from '../physics/Collision';
 import { lightState } from './TrafficLights';
 import { TRAFFIC_LOOKS } from '../vehicles/VehicleData';
+import { CAR_SS } from '../gfx/SpriteFactory';
 
 interface Seg {
   x0: number;
@@ -125,8 +126,8 @@ export class TrafficCar implements Body {
   sync(braking: boolean, night: number) {
     const c = Math.cos(this.angle);
     const s = Math.sin(this.angle);
-    this.sprite.setPosition(this.x, this.y).setRotation(this.angle);
-    this.shadow.setPosition(this.x + 3, this.y + 4).setRotation(this.angle);
+    this.sprite.setPosition(this.x, this.y).setRotation(this.angle).setScale(1 / CAR_SS);
+    this.shadow.setPosition(this.x + 3, this.y + 4).setRotation(this.angle).setScale(1 / CAR_SS);
     this.cone.setPosition(this.x + c * (this.len / 2), this.y + s * (this.len / 2)).setRotation(this.angle).setAlpha(0.26 * night);
     this.shadow.setAlpha(0.45 * (1 - 0.6 * night));
     this.tail.setPosition(this.x - c * (this.len / 2), this.y - s * (this.len / 2)).setScale(braking ? 0.55 : 0.4, braking ? 0.7 : 0.5).setRotation(this.angle);

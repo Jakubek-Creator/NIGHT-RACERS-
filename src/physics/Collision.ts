@@ -81,11 +81,22 @@ export function collideWorld(b: Body, map: CityMap, restitution = 0.35): number 
           py += ny * pen;
         }
       map.forPropsNear(cx, cy, r, (p) => {
+        if (p.knocked) return;
         const dx = cx - p.x;
         const dy = cy - p.y;
         const rr = r + p.r;
         const d2 = dx * dx + dy * dy;
         if (d2 >= rr * rr || d2 < 1e-6) return;
+        if (p.breakable) {
+          // knock it over (even when just nudged) and keep going, losing a little speed
+          const f = Math.cos(b.angle);
+          const s = Math.sin(b.angle);
+          map.knock(p, b.vx + f, b.vy + s);
+          const keep = p.kind === 'cone' ? 0.97 : 0.88;
+          b.vx *= keep;
+          b.vy *= keep;
+          return;
+        }
         const d = Math.sqrt(d2);
         const pen = rr - d;
         cx += (dx / d) * pen;

@@ -10,7 +10,7 @@ async function boot() {
     parent: 'game',
     backgroundColor: '#05060a',
     pixelArt: true,
-    roundPixels: true,
+    roundPixels: false,
     antialias: false,
     scale: { mode: Phaser.Scale.RESIZE, width: window.innerWidth, height: window.innerHeight },
     fps: { target: 60 },

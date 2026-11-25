@@ -32,6 +32,19 @@ export const hexStr = (n: number) => '#' + n.toString(16).padStart(6, '0');
 
 export { drawCar };
 
+/**
+ * Car textures are stored at CAR_SS× (each art pixel becomes a CAR_SS×CAR_SS block) with linear filtering and
+ * drawn at 1/CAR_SS scale. The pixel art stays crisp but rotated cars get smooth edges instead of jagged stair-steps.
+ */
+export const CAR_SS = 4;
+function supersample(c: HTMLCanvasElement): HTMLCanvasElement {
+  const o = makeCanvas(c.width * CAR_SS, c.height * CAR_SS);
+  const g = o.getContext('2d')!;
+  g.imageSmoothingEnabled = false;
+  g.drawImage(c, 0, 0, o.width, o.height);
+  return o;
+}
+
 function radial(size: number, stops: [number, number][]): HTMLCanvasElement {
   const c = makeCanvas(size, size);
   const g = c.getContext('2d')!;
@@ -99,14 +112,16 @@ export function registerTextures(scene: Phaser.Scene): SpriteBank {
   for (const v of VEHICLES) {
     const c = drawCar(v.look);
     carCanvas.set(v.id, c);
-    tex.addCanvas('car_' + v.id, c);
+    tex.addCanvas('car_' + v.id, supersample(c));
+    linear('car_' + v.id);
   }
   const trafficKeys: string[] = [];
   const trafficCanvases: HTMLCanvasElement[] = [];
   TRAFFIC_LOOKS.forEach((look, i) => {
     const c = drawCar(look);
     trafficCanvases.push(c);
-    tex.addCanvas('traffic_' + i, c);
+    tex.addCanvas('traffic_' + i, supersample(c));
+    linear('traffic_' + i);
     trafficKeys.push('traffic_' + i);
   });
 

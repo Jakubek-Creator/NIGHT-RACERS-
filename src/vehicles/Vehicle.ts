@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { DEPTH } from '../config';
+import { CAR_SS } from '../gfx/SpriteFactory';
 import { clamp, wrapAngle } from '../core/math';
 import type { Body } from '../physics/Collision';
 import type { CityMap } from '../world/CityMap';
@@ -86,10 +87,12 @@ export class Vehicle implements Body {
 
     // engine & brakes
     this.braking = false;
-    if (inp.throttle > 0 && vf < maxF) {
+    // analog throttle: how far the pedal is pressed sets the speed you settle at
+    const cap = maxF * (0.3 + 0.7 * inp.throttle);
+    if (inp.throttle > 0 && vf < cap) {
       const k = vf > 0 ? 1 - 0.65 * (vf / maxF) ** 2 : 1.4;
-      vf = Math.min(maxF, vf + accel * inp.throttle * k * dt);
-    }
+      vf = Math.min(cap, vf + accel * Math.max(0.35, inp.throttle) * k * dt);
+    } else if (inp.throttle > 0 && vf > cap) vf -= (vf - cap) * 0.8 * dt;
     if (inp.brake > 0) {
       if (vf > 8) {
         vf = Math.max(0, vf - s.brake * inp.brake * dt);
@@ -114,11 +117,12 @@ export class Vehicle implements Body {
 
     // steering
     const sf = clamp(Math.abs(vf) / 90, 0, 1);
-    const hs = 1 - 0.45 * clamp(Math.abs(vf) / s.maxSpeed, 0, 1);
+    const hs = 1 - 0.5 * clamp(Math.abs(vf) / s.maxSpeed, 0, 1);
     let turn = inp.steer * s.turn * sf * hs * (vf >= 0 ? 1 : -1);
     if (inp.handbrake && Math.abs(vf) > 80) turn *= 1.45;
     if (surf.offroad) turn *= 0.85 + 0.15 * (1 - pen);
-    this.yawRate += (turn - this.yawRate) * Math.min(1, 12 * dt);
+    // ease into and out of turns instead of snapping to the target yaw rate
+    this.yawRate += (turn - this.yawRate) * Math.min(1, 6.5 * dt);
     this.angle = wrapAngle(this.angle + (this.yawRate + this.spin) * dt);
     this.spin *= Math.exp(-5 * dt);
 
@@ -135,8 +139,8 @@ export class Vehicle implements Body {
     const { x, y, angle } = this;
     const c = Math.cos(angle);
     const s = Math.sin(angle);
-    this.sprite.setPosition(x, y).setRotation(angle);
-    this.shadow.setPosition(x + 3, y + 4).setRotation(angle);
+    this.sprite.setPosition(x, y).setRotation(angle).setScale(1 / CAR_SS);
+    this.shadow.setPosition(x + 3, y + 4).setRotation(angle).setScale(1 / CAR_SS);
     const hl = this.len / 2 - 1;
     this.coneL.setPosition(x + c * hl, y + s * hl).setRotation(angle).setAlpha(0.34 * night).setVisible(night > 0.05);
     this.shadow.setAlpha(0.45 * (1 - 0.6 * night));

@@ -39,6 +39,7 @@ export class GameScene extends Phaser.Scene {
   private skidIdx = 0;
   private dust!: Phaser.GameObjects.Particles.ParticleEmitter;
   private smoke!: Phaser.GameObjects.Particles.ParticleEmitter;
+  private debris!: Phaser.GameObjects.Particles.ParticleEmitter;
   private markerFx: { ring: Phaser.GameObjects.Graphics; glow: Phaser.GameObjects.Image; label: Phaser.GameObjects.Image; x: number; y: number }[] = [];
 
   private paused = false;
@@ -48,6 +49,8 @@ export class GameScene extends Phaser.Scene {
   private zoom = 1;
   private camX = 0;
   private camY = 0;
+  private lookX = 0;
+  private lookY = 0;
   private view = new Phaser.Geom.Rectangle();
   private time0 = 0;
   private lastCountdown = -1;
@@ -84,6 +87,10 @@ export class GameScene extends Phaser.Scene {
       lifespan: 1100, speed: { min: 8, max: 25 }, scale: { start: 0.4, end: 2 }, alpha: { start: 0.35, end: 0 }, tint: 0x555555, emitting: false,
     }).setDepth(DEPTH.light + 0.1);
 
+    this.debris = this.add.particles(0, 0, 'skid', {
+      lifespan: 500, speed: { min: 40, max: 120 }, scale: { start: 0.8, end: 0.3 }, alpha: { start: 1, end: 0 }, emitting: false,
+    }).setDepth(DEPTH.car + 0.1);
+
     this.addMarker(this.map.zones.raceStart.x, this.map.zones.raceStart.y, 0xf0b429, 'label_RACE');
     this.addMarker(this.map.zones.garage.x, this.map.zones.garage.y, 0x3a8bd8, 'label_GARAGE');
     // day/night: everything below this multiply layer is tinted by the time of day
@@ -92,7 +99,7 @@ export class GameScene extends Phaser.Scene {
     const cam = this.cameras.main;
     cam.setBounds(0, 0, WORLD_W, WORLD_H);
     cam.setBackgroundColor('#05060a');
-    cam.setRoundPixels(true);
+    cam.setRoundPixels(false);
     this.camX = this.player.x;
     this.camY = this.player.y;
     this.zoom = this.baseZoom();
@@ -275,6 +282,7 @@ export class GameScene extends Phaser.Scene {
     for (const v of dyn) v.sync(night);
 
     this.effects(dyn, dt);
+    this.handleKnocked();
     this.updateCamera(dt);
     this.updateView();
     this.traffic.update(dt, p.x, p.y, this.view, dyn, night);
@@ -433,13 +441,33 @@ export class GameScene extends Phaser.Scene {
     if (Math.random() < 0.25) for (const sk of this.skids) if (sk.alpha > 0) sk.setAlpha(Math.max(0, sk.alpha - 0.004));
   }
 
+  /** Redraw chunks where street furniture was knocked over, with debris and a thud. */
+  private handleKnocked() {
+    const q = this.map.knockQueue;
+    if (!q.length) return;
+    for (const prop of q.splice(0)) {
+      this.chunks.refreshAround(prop.x, prop.y);
+      const tint = prop.kind === 'tree' ? 0x3e7430 : prop.kind === 'cone' ? 0xf07a1a : 0xc8ccd4;
+      this.debris.setParticleTint(tint);
+      this.debris.emitParticleAt(prop.x, prop.y, prop.kind === 'tree' ? 10 : 6);
+      const d = Math.hypot(prop.x - this.player.x, prop.y - this.player.y);
+      if (d < 60) {
+        this.sound2.crash(prop.kind === 'cone' ? 0.05 : 0.25);
+        if (prop.kind !== 'cone') this.cameras.main.shake(90, 0.002);
+      }
+    }
+  }
+
   private updateCamera(dt: number) {
     const p = this.player;
     const cam = this.cameras.main;
-    const look = 0.42;
-    const tx = p.x + clamp(p.vx * look, -170, 170);
-    const ty = p.y + clamp(p.vy * look, -120, 120);
-    const k = damp(5, dt);
+    // the look-ahead offset eases separately so the view doesn't swing when you turn
+    const kl = damp(2.2, dt);
+    this.lookX += (clamp(p.vx * 0.4, -160, 160) - this.lookX) * kl;
+    this.lookY += (clamp(p.vy * 0.4, -110, 110) - this.lookY) * kl;
+    const tx = p.x + this.lookX;
+    const ty = p.y + this.lookY;
+    const k = damp(6, dt);
     this.camX += (tx - this.camX) * k;
     this.camY += (ty - this.camY) * k;
     const sp = clamp(p.speed / p.stats.maxSpeed, 0, 1);

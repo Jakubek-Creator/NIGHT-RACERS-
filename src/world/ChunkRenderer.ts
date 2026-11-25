@@ -70,7 +70,7 @@ export class ChunkRenderer {
 
     // warm pools of light under street lamps
     for (const p of this.map.props) {
-      if (p.kind !== 'lamp' || !inRange(p.x, p.y, 60)) continue;
+      if (p.kind !== 'lamp' || p.knocked || !inRange(p.x, p.y, 60)) continue;
       const x = p.x - ox + Math.cos(p.angle) * 8;
       const y = p.y - oy + Math.sin(p.angle) * 8;
       const grd = n.createRadialGradient(x, y, 0, x, y, 40);
@@ -450,17 +450,58 @@ export class ChunkRenderer {
 
   // ------------------------------------------------------------------ props
   private propShadow(g: Ctx, p: Prop, ox: number, oy: number) {
-    if (p.kind !== 'tree' && p.kind !== 'palm') return;
+    if ((p.kind !== 'tree' && p.kind !== 'palm') || p.knocked) return;
     g.fillStyle = 'rgba(10,15,25,0.3)';
     g.beginPath();
     g.ellipse(p.x - ox + 5, p.y - oy + 5, 11, 9, 0, 0, Math.PI * 2);
     g.fill();
   }
 
+  /** Knocked-over street furniture lying where it fell. */
+  private fallen(g: Ctx, p: Prop, x: number, y: number, r: () => number) {
+    const a = p.fallAngle ?? 0;
+    const c = Math.cos(a);
+    const s = Math.sin(a);
+    if (p.kind === 'lamp') {
+      g.fillStyle = '#2e3034';
+      g.fillRect(x - 2, y - 2, 4, 4); // broken base
+      g.strokeStyle = '#4a4c52';
+      g.lineWidth = 2;
+      g.beginPath();
+      g.moveTo(x, y);
+      g.lineTo(x + c * 16, y + s * 16);
+      g.stroke();
+      g.fillStyle = '#9a968c';
+      g.fillRect(x + c * 16 - 2, y + s * 16 - 2, 4, 4);
+      g.fillStyle = 'rgba(220,230,240,0.8)'; // glass shards
+      for (let i = 0; i < 5; i++) g.fillRect(x + c * 18 + (r() - 0.5) * 10, y + s * 18 + (r() - 0.5) * 10, 1, 1);
+    } else if (p.kind === 'tree') {
+      g.fillStyle = '#6a4a2e';
+      g.beginPath();
+      g.arc(x, y, 3, 0, Math.PI * 2);
+      g.fill();
+      g.fillStyle = '#3e7430';
+      for (let i = 0; i < 14; i++) g.fillRect(x + c * 10 + (r() - 0.5) * 18, y + s * 10 + (r() - 0.5) * 18, 2, 2);
+    } else if (p.kind === 'cone') {
+      g.save();
+      g.translate(x + c * 8, y + s * 8);
+      g.rotate(a + 1.2);
+      g.fillStyle = '#f07a1a';
+      g.fillRect(-3, -2, 6, 4);
+      g.fillStyle = '#f5f5f5';
+      g.fillRect(-1, -2, 1, 4);
+      g.restore();
+    }
+  }
+
   private prop(g: Ctx, p: Prop, ox: number, oy: number) {
     const x = p.x - ox;
     const y = p.y - oy;
     const r = mulberry32((p.x * 31 + p.y * 17) | 0);
+    if (p.knocked) {
+      this.fallen(g, p, x, y, r);
+      return;
+    }
     switch (p.kind) {
       case 'tree': {
         const greens = [['#2e5a26', '#3e7430', '#5a9442'], ['#2a5230', '#3a6a3e', '#56885a'], ['#3a5a22', '#4e7a2c', '#6a9a3a']][p.variant % 3];

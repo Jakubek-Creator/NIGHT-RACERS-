@@ -34,6 +34,10 @@ export interface Prop {
   solid: boolean;
   angle: number;
   variant: number;
+  /** street furniture that gets knocked over instead of stopping the car */
+  breakable?: boolean;
+  knocked?: boolean;
+  fallAngle?: number;
 }
 
 export type BlockKind = 'downtown' | 'park' | 'parking' | 'construction' | 'fair' | 'garage' | 'coast';
@@ -76,8 +80,20 @@ export class CityMap {
     spawn: { x: 0, y: 0, angle: 0 },
   };
 
+  /** props knocked over since the last frame (the scene redraws their chunks) */
+  readonly knockQueue: Prop[] = [];
+
   constructor(seed = 1337) {
     this.generate(seed);
+    for (const p of this.props) {
+      if (p.kind === 'lamp' || p.kind === 'cone' || (p.kind === 'tree' && p.r === 6)) {
+        // lamp posts, cones and small street trees break away when hit
+        p.breakable = true;
+        p.solid = true;
+        p.r = p.kind === 'cone' ? 3 : 4;
+      } else if (p.kind === 'tree') p.r = 4; // park trees: only the trunk is solid
+      else if (p.kind === 'palm') p.r = 3;
+    }
     for (const p of this.props) {
       if (!p.solid) continue;
       const tx = clamp(Math.floor(p.x / TILE), 0, MAP_W - 1);
@@ -85,6 +101,13 @@ export class CityMap {
       const i = ty * MAP_W + tx;
       (this.propGrid[i] ??= []).push(p);
     }
+  }
+
+  knock(p: Prop, vx: number, vy: number) {
+    if (p.knocked) return;
+    p.knocked = true;
+    p.fallAngle = Math.atan2(vy, vx);
+    this.knockQueue.push(p);
   }
 
   get(tx: number, ty: number): number {

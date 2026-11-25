@@ -42,15 +42,15 @@ export class Input {
     const left = this.k('ArrowLeft', 'KeyA');
     const right = this.k('ArrowRight', 'KeyD');
     const want = (right ? 1 : 0) - (left ? 1 : 0);
-    // keyboard steering ramps in and out for a smoother arcade feel
-    if (want === 0) this.steerKb -= Math.sign(this.steerKb) * Math.min(Math.abs(this.steerKb), 8 * dt);
+    // keyboard steering eases in (so taps make small corrections) and recentres quickly
+    if (want === 0) this.steerKb -= Math.sign(this.steerKb) * Math.min(Math.abs(this.steerKb), 9 * dt);
     else {
-      if (Math.sign(this.steerKb) !== want) this.steerKb *= 0.5;
-      this.steerKb = clamp(this.steerKb + want * 7 * dt, -1, 1);
+      if (Math.sign(this.steerKb) !== want) this.steerKb *= 0.3;
+      this.steerKb = clamp(this.steerKb + want * 4.5 * dt, -1, 1);
     }
     const t = this.touch.state;
     const f: Frame = {
-      throttle: Math.max(this.k('ArrowUp', 'KeyW') ? 1 : 0, t.gas ? 1 : 0),
+      throttle: Math.max(this.k('ArrowUp', 'KeyW') ? 1 : 0, t.gas),
       brake: Math.max(this.k('ArrowDown', 'KeyS') ? 1 : 0, t.brake ? 1 : 0),
       steer: Math.abs(t.steer) > 0.02 ? t.steer : this.steerKb,
       handbrake: this.k('Space') || t.drift,
