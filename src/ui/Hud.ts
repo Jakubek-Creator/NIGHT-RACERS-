@@ -23,7 +23,7 @@ export interface Marker {
   x: number;
   y: number;
   color: string;
-  kind: 'dot' | 'ring' | 'flag' | 'wrench';
+  kind: 'dot' | 'ring' | 'flag' | 'wrench' | 'pin';
 }
 
 export interface HudFrame {
@@ -38,6 +38,8 @@ export interface HudFrame {
   markers: Marker[];
   route?: { x: number; y: number }[];
   race?: { pos: number; total: number; lap: number; laps: number; time: number; cpAngle: number | null };
+  /** direction to the waypoint when one is set (free roam only) */
+  waypointAngle?: number | null;
   fps?: number;
   night?: number;
 }
@@ -52,7 +54,7 @@ export const fmtTime = (t: number) => {
 export class Hud {
   private mini = $('minimap') as HTMLCanvasElement;
   private mctx: CanvasRenderingContext2D;
-  private base: HTMLCanvasElement;
+  readonly base: HTMLCanvasElement;
   private speedo = $('speedo') as HTMLCanvasElement;
   private sctx: CanvasRenderingContext2D;
   private toastTimer = 0;
@@ -131,7 +133,10 @@ export class Hud {
       } else arrow.classList.add('hidden');
     } else {
       ri.classList.add('hidden');
-      arrow.classList.add('hidden');
+      if (f.waypointAngle != null) {
+        arrow.classList.remove('hidden');
+        arrow.style.transform = `translateX(-50%) rotate(${f.waypointAngle + Math.PI / 2}rad)`;
+      } else arrow.classList.add('hidden');
     }
 
     this.drawSpeedo(f);
@@ -229,6 +234,16 @@ export class Hud {
         g.lineWidth = 2 * k;
         g.beginPath();
         g.arc(x, y, 5 * k, 0, Math.PI * 2);
+        g.stroke();
+      } else if (m.kind === 'pin') {
+        g.strokeStyle = '#fff';
+        g.lineWidth = 1.5 * k;
+        g.beginPath();
+        g.moveTo(x, y);
+        g.lineTo(x - 5 * k, y - 9 * k);
+        g.arc(x, y - 10 * k, 5 * k, Math.PI * 0.8, Math.PI * 0.2);
+        g.closePath();
+        g.fill();
         g.stroke();
       } else if (m.kind === 'flag') {
         g.fillRect(x - 1 * k, y - 7 * k, 2 * k, 9 * k);

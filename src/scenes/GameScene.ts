@@ -10,6 +10,7 @@ import { DayNight } from '../systems/DayNight';
 import { Input } from '../systems/Input';
 import { SaveData, writeSave } from '../systems/Save';
 import { Weather } from '../systems/Weather';
+import { BigMap } from '../ui/BigMap';
 import { Hud, Marker, fmtTime } from '../ui/Hud';
 import { closeOverlay, showPause, showResults } from '../ui/Menus';
 import { TouchControls } from '../ui/TouchControls';
@@ -34,6 +35,7 @@ export class GameScene extends Phaser.Scene {
   private touch!: TouchControls;
   private input2!: Input;
   private hud!: Hud;
+  private bigMap!: BigMap;
 
   private skids: Phaser.GameObjects.Image[] = [];
   private skidIdx = 0;
@@ -109,7 +111,19 @@ export class GameScene extends Phaser.Scene {
     this.chunks.update(this.view, 0, this.weather.wetness, this.dayNight.night);
     this.traffic.update(0, this.player.x, this.player.y, new Phaser.Geom.Rectangle(), [], this.dayNight.night);
 
-    document.getElementById('pauseBtn')!.addEventListener('click', () => this.togglePause());
+    document.getElementById('pauseBtn')!.addEventListener('click', () => (this.bigMap.isOpen ? this.bigMap.close() : this.togglePause()));
+    const z = this.map.zones;
+    this.bigMap = new BigMap(this.hud.base, [
+      { x: z.raceStart.x, y: z.raceStart.y + 150, name: 'MOTOR FAIR' },
+      { x: z.garage.x, y: z.garage.y + 110, name: 'GARAGE' },
+      { x: 124 * TILE, y: 64 * TILE, name: 'BAY' },
+      { x: 28 * TILE, y: 28 * TILE, name: 'NORTH PARK' },
+      { x: 92 * TILE, y: 108 * TILE, name: 'SOUTH PARK' },
+      { x: 28 * TILE, y: 108 * TILE, name: 'BUILDING SITE' },
+    ]);
+    this.bigMap.onClose = () => this.input2.reset();
+    this.bigMap.onWaypoint = (w) => (this.waypoint = w);
+    document.getElementById('minimap')!.addEventListener('click', () => this.openBigMap());
     document.addEventListener('visibilitychange', () => {
       if (document.hidden && !this.paused && !this.resultsShown) this.togglePause();
     });
@@ -221,7 +235,9 @@ export class GameScene extends Phaser.Scene {
   update(_t: number, deltaMs: number) {
     const dt = Math.min(deltaMs / 1000, 1 / 20);
     const frame = this.input2.read(dt);
-    if (frame.pause) this.togglePause();
+    if (frame.map) this.bigMap.isOpen ? this.bigMap.close() : this.openBigMap();
+    if (frame.pause) this.bigMap.isOpen ? this.bigMap.close() : this.togglePause();
+    if (this.bigMap.isOpen) return; // the world waits while you read the map
     if (this.paused || this.editingControls) {
       this.hud.update(dt, this.hudFrame());
       return;
@@ -477,6 +493,16 @@ export class GameScene extends Phaser.Scene {
     cam.centerOn(this.camX, this.camY);
   }
 
+  private waypoint: { x: number; y: number } | null = null;
+
+  private openBigMap() {
+    if (this.paused || this.resultsShown || this.editingControls) return;
+    this.bigMap.waypoint = this.waypoint;
+    this.sound2.engine(0, 0);
+    this.sound2.skid(0);
+    this.bigMap.open(this.hudFrame());
+  }
+
   private hudFrame() {
     const p = this.player;
     const markers: Marker[] = [];
@@ -499,6 +525,16 @@ export class GameScene extends Phaser.Scene {
       markers.push({ x: this.map.zones.raceStart.x, y: this.map.zones.raceStart.y, color: '#f0b429', kind: 'flag' });
       markers.push({ x: this.map.zones.garage.x, y: this.map.zones.garage.y, color: '#3a8bd8', kind: 'wrench' });
     }
+    let waypointAngle: number | null = null;
+    if (this.waypoint) {
+      if (Math.hypot(this.waypoint.x - p.x, this.waypoint.y - p.y) < 80) {
+        this.waypoint = null;
+        this.hud.toast('WAYPOINT REACHED', 1800);
+      } else {
+        markers.push({ x: this.waypoint.x, y: this.waypoint.y, color: '#e03a2e', kind: 'pin' });
+        if (!race.active) waypointAngle = Math.atan2(this.waypoint.y - p.y, this.waypoint.x - p.x);
+      }
+    }
     return {
       speed: p.forward,
       maxSpeed: p.stats.maxSpeed,
@@ -512,6 +548,7 @@ export class GameScene extends Phaser.Scene {
       route: race.active ? race.checkpoints : undefined,
       night: this.dayNight.night,
       race: raceInfo,
+      waypointAngle,
       fps: this.showFps ? this.game.loop.actualFps : undefined,
     };
   }

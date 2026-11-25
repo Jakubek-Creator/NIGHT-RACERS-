@@ -8,6 +8,7 @@ export interface Frame {
   handbrake: boolean;
   interact: boolean; // edge-triggered
   pause: boolean; // edge-triggered
+  map: boolean; // edge-triggered
   zoom: number; // -1, 0, +1 edge
 }
 
@@ -38,6 +39,13 @@ export class Input {
     return codes.some((c) => this.edges.has(c));
   }
 
+  /** Forget held keys and steering (after a menu or the map was open). */
+  reset() {
+    this.keys.clear();
+    this.edges.clear();
+    this.steerKb = 0;
+  }
+
   read(dt: number): Frame {
     const left = this.k('ArrowLeft', 'KeyA');
     const right = this.k('ArrowRight', 'KeyD');
@@ -56,6 +64,7 @@ export class Input {
       handbrake: this.k('Space') || t.drift,
       interact: this.e('KeyE', 'Enter') || this.touch.consumeAct(),
       pause: this.e('Escape', 'KeyP'),
+      map: this.e('KeyM'),
       zoom: this.e('Equal', 'NumpadAdd') ? 1 : this.e('Minus', 'NumpadSubtract') ? -1 : 0,
     };
     this.edges.clear();

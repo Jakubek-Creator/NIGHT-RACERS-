@@ -69,6 +69,19 @@ body.touch #speedo { bottom: calc(4px + var(--safe-b)); }
 #editBar button, .panel button { font-family: inherit; font-weight: 800; letter-spacing: 0.5px; background: #2a2d35; color: var(--ink); border: 1px solid var(--line); border-radius: 4px; padding: 8px 12px; cursor: pointer; }
 .panel button:hover { background: #343844; }
 
+/* big map */
+#bigmap { position: fixed; inset: 0; z-index: 38; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; background: rgba(10, 11, 14, 0.9); padding: calc(8px + var(--safe-t)) max(16px, var(--safe-r)) calc(8px + var(--safe-b)) max(16px, var(--safe-l)); }
+#bmHead { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: center; }
+#bmHead b { font-size: 20px; font-style: italic; font-weight: 900; border-bottom: 3px solid var(--accent); }
+#bmHead span { color: var(--dim); font-size: 12px; font-weight: 600; }
+#bmHead button { font-family: inherit; font-weight: 800; background: #2a2d35; color: var(--ink); border: 1px solid var(--line); border-radius: 4px; padding: 7px 12px; cursor: pointer; }
+#bmCanvas { border: 3px solid var(--panel-solid); border-radius: 6px; image-rendering: pixelated; touch-action: none; cursor: crosshair; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5); }
+#bmLegend { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; font-size: 12px; font-weight: 700; color: var(--dim); }
+#bmLegend i { display: inline-block; width: 10px; height: 10px; margin-right: 5px; vertical-align: -1px; border-radius: 2px; }
+.lg-you { background: var(--accent); } .lg-race { background: repeating-conic-gradient(#111 0 25%, #fff 0 50%) 0 0 / 5px 5px; } .lg-garage { background: var(--blue); } .lg-pin { background: var(--accent); border-radius: 50% 50% 50% 0 !important; } .lg-car { background: #28282f; border: 1px solid #888; }
+#minimap { pointer-events: auto; cursor: pointer; }
+@media (max-height: 500px) { #bmLegend { display: none; } #bmHead span { display: none; } }
+
 /* overlays */
 #overlay { position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; background: rgba(10, 11, 14, 0.55); backdrop-filter: blur(3px); padding: 12px; }
 .panel { width: min(560px, 100%); max-height: 100%; overflow-y: auto; background: var(--panel-solid); border-top: 4px solid var(--accent); border-radius: 4px; padding: 16px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5); }

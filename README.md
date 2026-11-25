@@ -31,6 +31,7 @@ Add `?hour=21` (any hour 0–23) to start at a given time of day. The pause menu
 | Interact (start race, repair) | E / Enter | Contextual button |
 | Zoom | + / − / mouse wheel | Pause menu slider |
 | Pause | Esc / P | II button |
+| Big map (tap to set a waypoint) | M | Tap the mini-map |
 
 Touch controls appear automatically on touch devices. In the pause menu you can resize them, drag them to new
 positions (MOVE CONTROLS), or reset the layout. The layout is remembered per device.
@@ -60,7 +61,7 @@ positions (MOVE CONTROLS), or reset the layout. The layout is remembered per dev
    cheaper update.
 8. **Mobile controls.** There is an analog steering pad and GAS/BRAKE/DRIFT buttons, all multi-touch, plus a contextual
    action button. Size and position are editable.
-9. **Mini-map.** It shows a player-centred view with traffic, rivals, the race route, the next checkpoint, and the race and
+9. **Mini-map and big map.** Tap the mini-map or press M for a full-screen city map (the game pauses); tap it to set a waypoint that the mini-map and an on-screen arrow guide you to. The mini-map shows a player-centred view with traffic, rivals, the race route, the next checkpoint, and the race and
    garage icons.
 10. **Race event: DOWNTOWN LOOP.** Drive into the RACE ring at the Motor Fair and press E or RACE. It is a 2-lap street
     race against 3 AI rivals drawn from a mixed-class roster. It has a countdown, checkpoints with direction chevrons,
